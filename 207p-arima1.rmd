@@ -1,0 +1,337 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+STATS 207 Project RMD
+
+```{r}
+library(astsa)
+library(forecast)
+library(tseries)
+library(Metrics)
+library(xts)
+library(dlm)
+
+## Import data and preprocess data
+## We use the closing data here
+arkg <- read.csv('arkg.csv')
+arkg$Date <- as.Date(arkg$Date)
+arkg_ts <- xts(arkg$Close, arkg$Date)
+arkg2021 <- read.csv('arkg2021.csv')
+full_ark <- read.csv('ARKGFULL.csv')
+full_ark$Date <- as.Date(full_ark$Date)
+fulla_ts <- as.ts(full_ark$Close, full_ark$Date)
+
+qqq <- read.csv('qqq.csv')
+qqq$Date <- as.Date(qqq$Date)
+qqq_ts <- xts(qqq$Close, qqq$Date)
+qqq2021 <- read.csv('qqq2021.csv')
+full_qqq <- read.csv('QQQFULL.csv')
+full_qqq$Date <- as.Date(full_qqq$Date)
+fullq_ts <- as.ts(full_qqq$Close, full_qqq$Date)
+
+schf <- read.csv('schf.csv')
+schf$Date <- as.Date(schf$Date)
+schf_ts <- xts(schf$Close, schf$Date)
+schf2021 <- read.csv('schf2021.csv')
+full_schf <- read.csv('SCHFFULL.csv')
+full_schf$Date <- as.Date(full_schf$Date)
+fulls_ts <- as.ts(full_schf$Close, full_schf$Date)
+
+vt <- read.csv('vt.csv')
+vt$Date <- as.Date(vt$Date)
+vt_ts <- xts(vt$Close, vt$Date)
+vt2021 <- read.csv('vt2021.csv')
+full_vt <- read.csv('VTFULL.csv')
+full_vt$Date <- as.Date(full_vt$Date)
+fullv_ts <- as.ts(full_vt$Close, full_vt$Date)
+
+xlf <- read.csv('xlf.csv')
+xlf$Date <- as.Date(xlf$Date)
+xlf_ts <- xts(xlf$Close, xlf$Date)
+xlf2021 <- read.csv('xlf2021.csv')
+full_xlf <- read.csv('XLFFULL.csv')
+full_xlf$Date <- as.Date(full_xlf$Date)
+fullx_ts <- as.ts(full_xlf$Close, full_xlf$Date)
+```
+
+```{r}
+## ARKG Plotting and ARIMA Fitting
+plot(arkg_ts)
+acf2(arkg_ts)
+
+diff_ark <- diff(log(arkg_ts))
+diff_ark <- diff_ark[!is.na(diff_ark)]
+plot(diff_ark)
+acf2(diff_ark)
+
+mod1 <- sarima(diff_ark, 0, 1, 1)
+mod2 <- sarima(diff_ark, 0, 1, 2)
+mod2
+preds1 <- sarima.for(arkg_ts, 124, 0, 0, 2)
+preds2 <- sarima.for(arkg_ts, 124, 0, 1, 2)
+lines(fulla_ts)
+sqrt(mse(arkg2021$Close, preds2$pred)) ## Second model MSE
+```
+
+```{r}
+## QQQ Plotting and ARIMA Fitting
+plot(qqq_ts)
+acf2(qqq_ts)
+
+diff_qqq <- diff(log(qqq_ts))
+diff_qqq <- diff_qqq[!is.na(diff_qqq)]
+plot(diff_qqq)
+acf2(diff_qqq)
+
+sarima(diff_qqq, 0, 1, 1)
+
+qmod <- sarima(diff_qqq, 0, 1, 2)
+qmod
+qpreds2 <- sarima.for(qqq_ts, 124, 0, 1, 2)
+lines(fullq_ts)
+sqrt(mse(qqq2021$Close, qpreds2$pred)) ## Second model MSE
+```
+
+\newpage
+
+```{r}
+## SCHF Plotting and ARIMA Fitting
+plot(schf_ts)
+acf2(schf_ts)
+
+diff_schf <- diff(log(schf_ts))
+diff_schf <- diff_schf[!is.na(diff_schf)]
+plot(diff_schf)
+acf2(diff_schf)
+
+smod <- sarima(diff_schf, 0, 1, 2)
+smod
+spreds2 <- sarima.for(schf_ts, 124, 0, 1, 2)
+lines(fulls_ts)
+sqrt(mse(schf2021$Close, spreds2$pred)) ## Second model MSE
+```
+
+\newpage
+
+```{r}
+plot(vt_ts)
+acf2(vt_ts)
+
+diff_vt <- diff(log(vt_ts))
+diff_vt <- diff_vt[!is.na(diff_vt)]
+plot(diff_vt)
+acf2(diff_vt)
+
+vmod <- sarima(diff_vt, 0, 1, 2)
+vmod
+vpreds2 <- sarima.for(vt_ts, 124, 0, 1, 2)
+lines(fullv_ts)
+sqrt(mse(vt2021$Close, vpreds2$pred)) ## Second model MSE
+```
+
+\newpage
+
+```{r}
+plot(xlf_ts)
+acf2(xlf_ts)
+
+diff_xlf <- diff(log(xlf_ts))
+diff_xlc <- diff_xlf[!is.na(diff_xlf)]
+plot(diff_xlc)
+acf2(diff_xlc)
+
+xmod <- sarima(diff_xlc, 0, 1, 2)
+xmod
+xpreds2 <- sarima.for(xlf_ts, 124, 0, 1, 2)
+lines(fullx_ts)
+sqrt(mse(xlf2021$Close, xpreds2$pred)) ## Second model MSE
+```
+
+```{r}
+## Same procedure but including clipping over all datasets
+## Clip values: 
+## - IQR(series) + 
+## - 90th percentile value
+## - mean(series) + 
+arkg_ts1 <- ifelse(arkg_ts > (IQR(arkg_ts) + quantile(arkg_ts, 0.75)), IQR(arkg_ts) + quantile(arkg_ts, 0.75), arkg_ts)
+qqq_ts1 <- ifelse(qqq_ts > (IQR(qqq_ts) + quantile(qqq_ts, 0.75)), IQR(qqq_ts) + quantile(qqq_ts, 0.75), qqq_ts)
+schf_ts1 <- ifelse(schf_ts > (IQR(schf_ts) + quantile(schf_ts, 0.75)), IQR(schf_ts) + quantile(schf_ts, 0.75), schf_ts)
+vt_ts1 <- ifelse(vt_ts > (IQR(vt_ts) + quantile(vt_ts, 0.75)), IQR(vt_ts) + quantile(vt_ts, 0.75), vt_ts)
+xlf_ts1 <- ifelse(xlf_ts > (IQR(xlf_ts) + quantile(xlf_ts, 0.75)), IQR(xlf_ts) + quantile(xlf_ts, 0.75), xlf_ts)
+  
+arkg_ts2 <- ifelse(arkg_ts > quantile(arkg_ts, 0.9), quantile(arkg_ts, 0.9), arkg_ts)
+qqq_ts2 <- ifelse(qqq_ts > quantile(qqq_ts, 0.9), quantile(qqq_ts, 0.9), qqq_ts)
+schf_ts2 <- ifelse(schf_ts > quantile(schf_ts, 0.9), quantile(schf_ts, 0.9), schf_ts)
+vt_ts2 <- ifelse(vt_ts > quantile(vt_ts, 0.9), quantile(vt_ts, 0.9), vt_ts)
+xlf_ts2 <- ifelse(xlf_ts > quantile(xlf_ts, 0.9), quantile(xlf_ts, 0.9), xlf_ts)
+
+arkg_ts3 <- ifelse(arkg_ts > (mean(arkg_ts) + quantile(arkg_ts, 0.75)), mean(arkg_ts) + quantile(arkg_ts, 0.75), arkg_ts)
+qqq_ts3 <- ifelse(qqq_ts > (mean(qqq_ts) + quantile(qqq_ts, 0.75)), mean(qqq_ts) + quantile(qqq_ts, 0.75), qqq_ts)
+schf_ts3 <- ifelse(schf_ts > (mean(schf_ts) + quantile(schf_ts, 0.75)), mean(schf_ts) + quantile(schf_ts, 0.75), schf_ts)
+vt_ts3 <- ifelse(vt_ts > (mean(vt_ts) + quantile(vt_ts, 0.75)), mean(vt_ts) + quantile(vt_ts, 0.75), vt_ts)
+xlf_ts3 <- ifelse(xlf_ts > (mean(xlf_ts) + quantile(xlf_ts, 0.75)), mean(xlf_ts) + quantile(xlf_ts, 0.75), xlf_ts)
+
+## ARKG Models
+diff_a1 <- diff(log(arkg_ts1))
+diff_a1 <- diff_a1[!is.na(diff_a1)]
+diff_a2 <- diff(log(arkg_ts2))
+diff_a2 <- diff_a2[!is.na(diff_a2)]
+diff_a3 <- diff(log(arkg_ts3))
+diff_a3 <- diff_a3[!is.na(diff_a3)]
+
+camod1 = sarima(diff_a1, 0, 1, 2)
+camod1
+camod2 = sarima(diff_a2, 0, 1, 2)
+camod2
+camod3 = sarima(diff_a3, 0, 1, 2)
+camod3
+
+## QQQ Models
+diff_q1 <- diff(log(qqq_ts1))
+diff_q1 <- diff_q1[!is.na(diff_q1)]
+diff_q2 <- diff(log(qqq_ts2))
+diff_q2 <- diff_q2[!is.na(diff_q2)]
+diff_q3 <- diff(log(qqq_ts3))
+diff_q3 <- diff_q3[!is.na(diff_q3)]
+
+cqmod1 = sarima(diff_q1, 0, 1, 2)
+cqmod1
+cqmod2 = sarima(diff_q2, 0, 1, 2)
+cqmod2
+cqmod3 = sarima(diff_q3, 0, 1, 2)
+cqmod3
+  
+## SCHF Models
+diff_s1 <- diff(log(schf_ts1))
+diff_s1 <- diff_s1[!is.na(diff_s1)]
+diff_s2 <- diff(log(schf_ts2))
+diff_s2 <- diff_s2[!is.na(diff_s2)]
+diff_s3 <- diff(log(schf_ts3))
+diff_s3 <- diff_s3[!is.na(diff_s3)]
+
+csmod1 = sarima(diff_s1, 0, 1, 2)
+csmod1
+csmod2 = sarima(diff_s2, 0, 1, 2)
+csmod2
+csmod3 = sarima(diff_s3, 0, 1, 2)
+csmod3
+
+## VT Models
+diff_v1 <- diff(log(vt_ts1))
+diff_v1 <- diff_v1[!is.na(diff_v1)]
+diff_v2 <- diff(log(vt_ts2))
+diff_v2 <- diff_v2[!is.na(diff_v2)]
+diff_v3 <- diff(log(vt_ts3))
+diff_v3 <- diff_v3[!is.na(diff_v3)]
+
+cvmod1 = sarima(diff_v1, 0, 1, 2)
+cvmod1
+cvmod2 = sarima(diff_v2, 0, 1, 2)
+cvmod2
+cvmod3 = sarima(diff_v3, 0, 1, 2)
+cvmod3
+
+## XLF Models
+diff_x1 <- diff(log(xlf_ts1))
+diff_x1 <- diff_x1[!is.na(diff_x1)]
+diff_x2 <- diff(log(xlf_ts2))
+diff_x2 <- diff_x2[!is.na(diff_x2)]
+diff_x3 <- diff(log(xlf_ts3))
+diff_x3 <- diff_x3[!is.na(diff_x3)]
+
+cxmod1 = sarima(diff_x1, 0, 1, 2)
+cxmod1
+cxmod2 = sarima(diff_x2, 0, 1, 2)
+cxmod2
+cxmod3 = sarima(diff_x3, 0, 1, 2)
+cxmod3
+```
+
+```{r}
+aop <- auto.arima(arkg_ts, ic = "aic")
+aop
+qop <- auto.arima(qqq_ts, ic = "aic")
+qop
+sop <- auto.arima(schf_ts, ic = "aic")
+sop
+vop <- auto.arima(vt_ts, ic = "aic")
+vop
+xop <- auto.arima(xlf_ts, ic = "aic")
+xop
+
+afcast <- forecast(aop, h=124)
+plot(afcast, main = "ARKG Forecast", ylim = c(-200, 200))
+lines(full_ark$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(arkg2021$Close, afcast$mean))
+
+qfcast <- forecast(qop, h=124)
+plot(qfcast, main = "QQQ Forecast", ylim = c(-200, 400))
+lines(full_qqq$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(qqq2021$Close, qfcast$mean))
+
+sfcast <- forecast(sop, h=124)
+plot(sfcast, main = "SCHF Forecast", ylim = c(-200, 200))
+lines(full_schf$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(schf2021$Close, sfcast$mean))
+
+vfcast <- forecast(vop, h=124)
+plot(vfcast, main = "VT Forecast", ylim = c(-200, 200))
+lines(full_vt$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(vt2021$Close, vfcast$mean))
+
+xfcast <- forecast(xop, h=124)
+plot(xfcast, main = "XLF Forecast", ylim = c(-200, 200))
+lines(full_xlf$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(xlf2021$Close, xfcast$mean))
+```
+
+```{r}
+aop <- auto.arima(arkg_ts2, ic = "aic")
+aop
+qop <- auto.arima(qqq_ts2, ic = "aic")
+qop
+sop <- auto.arima(schf_ts2, ic = "aic")
+sop
+vop <- auto.arima(vt_ts2, ic = "aic")
+vop
+xop <- auto.arima(xlf_ts2, ic = "aic")
+xop
+
+afcast <- forecast(aop, h=124)
+plot(afcast, main = "ARKG Forecast", ylim = c(-200, 200))
+lines(full_ark$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(arkg2021$Close, afcast$mean))
+
+qfcast <- forecast(qop, h=124)
+plot(qfcast, main = "QQQ Forecast", ylim = c(-200, 400))
+lines(full_qqq$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(qqq2021$Close, qfcast$mean))
+
+sfcast <- forecast(sop, h=124)
+plot(sfcast, main = "SCHF Forecast", ylim = c(-200, 200))
+lines(full_schf$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(schf2021$Close, sfcast$mean))
+
+vfcast <- forecast(vop, h=124)
+plot(vfcast, main = "VT Forecast", ylim = c(-200, 200))
+lines(full_vt$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(vt2021$Close, vfcast$mean))
+
+xfcast <- forecast(xop, h=124)
+plot(xfcast, main = "XLF Forecast", ylim = c(-200, 200))
+lines(full_xlf$Close)
+abline(v=1512, lty=2, col=5)
+sqrt(mse(xlf2021$Close, xfcast$mean))
+```
