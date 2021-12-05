@@ -59,12 +59,12 @@ fullx_ts <- as.ts(full_xlf$Close, full_xlf$Date)
 
 ```{r}
 ## Kalman Filtering
-split_df <- ts_split(ts.obj = arkg_ts, sample.out = 20)
+split_df <- ts_split(ts.obj = arkg_ts, sample.out = 31)
 
 training = split_df$train
 
 model <- function(p) {
-  return(dlmModPoly(2, dV = p[1], dW = p[2:3]) + dlmModSeas(20, dV = p[4]))
+  return(dlmModPoly(2, dV = p[1], dW = p[2:3]) + dlmModSeas(31, dV = p[4]))
 }
 
 ## Parameter Estimation
@@ -79,16 +79,16 @@ modelsmoothed <- dlmSmooth(training, modelfit)
 ```
 
 ```{r}
-n <- 1*20
+n <- 1*31
 forecast <- dlmForecast(modelfilter, nAhead = n)
 
 x <- index(training)
-xf <- seq(max(x), max(x) + n/124, 1/124)
+xf <- seq(max(x), max(x) + n/31, 1/31)
 aa <- forecast$a[,1]* (-1)
-aa <- cbind(forecast$a[,1], a)
+aa <- cbind(forecast$a[,1], aa)
 a <- drop(forecast$a%*%t(FF(modelfit)))
 a <- c(tail(training, 1), a)
-df <- rbind(
+df <- rbind(mo
   data.frame(x = x, y = as.numeric(training), series = "original"),
   data.frame(x = x, y = apply(modelfilter$m[-1,1:2],1,sum), series = "filtered"),
   data.frame(x = x, y = apply(modelsmoothed$s[-1,1:2],1,sum), series = "smoothed"),
